@@ -204,17 +204,18 @@ DTLS uses a simple retransmission timer to handle packet loss.
 phase of the DTLS handshake:
 
 ~~~~
-         Client                                   Server
-         ------                                   ------
-         ClientHello           ------>
+Client                                          Server
+------                                          ------
+ClientHello           -------->
 
-                                 X<-- HelloRetryRequest
-                                                  (lost)
+                      X<-------      HelloRetryRequest
+                      (lost)
 
-         [Timer Expires]
+[Timer Expires]
 
-         ClientHello           ------>
-         (retransmit)
+ClientHello           -------->
+                     (retransmit)
+
 ~~~~
 {: #dtls-retransmission title="DTLS retransmission example"}
 
@@ -549,10 +550,10 @@ block function (Section 2.3 of {{!CHACHA=RFC8439}}):
 The sn_key is computed as follows:
 
 ~~~~
-   [sender]_sn_key  = HKDF-Expand-Label(Secret, "sn" , "", key_length)
+ [sender]_sn_key  = HKDF-Expand-Label(Secret, "sn" , "", key_length)
 ~~~~
 
-[sender] denotes the sending side. The Secret value to be used is described
+\[sender] denotes the sending side. The Secret value to be used is described
 in Section 7.3 of {{!TLS13}}.
 
 The encrypted sequence number is computed by XORing the leading
@@ -822,17 +823,17 @@ the figure focuses on the cookie exchange; all other extensions
 are omitted.
 
 ~~~~
-      Client                                   Server
-      ------                                   ------
-      ClientHello           ------>
+Client                                          Server
+------                                          ------
+ClientHello           -------->
 
-                            <----- HelloRetryRequest
-                                    + cookie
+                                     HelloRetryRequest
+                      <--------               + cookie
 
-      ClientHello           ------>
-       + cookie
+ClientHello
+ + cookie             -------->
 
-      [Rest of handshake]
+                  ... Rest of handshake
 ~~~~
 {: #dtls-cookie-exchange title="DTLS exchange with HelloRetryRequest containing the \"cookie\" extension"}
 
@@ -1090,111 +1091,117 @@ is received. (See {{dtls-epoch}} for the definitions of each epoch.)
 DTLS messages are grouped into a series of message flights, according
 to the diagrams below.
 
-~~~~
-Client                                             Server
+~~~
+Client                                          Server
+------                                          ------
 
-ClientHello                                                 +----------+
- + key_share*                                               | Flight 1 |
- + pre_shared_key*      -------->                           +----------+
+ClientHello                                             +----------+
+ + key_share*                                           | Flight 1 |
+ + pre_shared_key*    -------->                         +----------+
 
-                                                            +----------+
-                        <--------        HelloRetryRequest  | Flight 2 |
-                                          + cookie          +----------+
+                                                        +----------+
+                      <--------      HelloRetryRequest  | Flight 2 |
+                                      + cookie          +----------+
 
 
-ClientHello                                                 +----------+
- + key_share*                                               | Flight 3 |
- + pre_shared_key*      -------->                           +----------+
+ClientHello                                             +----------+
+ + key_share*                                           | Flight 3 |
+ + pre_shared_key*    -------->                         +----------+
  + cookie
 
-                                               ServerHello
-                                              + key_share*
-                                         + pre_shared_key*  +----------+
-                                     {EncryptedExtensions}  | Flight 4 |
-                                     {CertificateRequest*}  +----------+
-                                            {Certificate*}
-                                      {CertificateVerify*}
-                        <--------               {Finished}
-                                       [Application Data*]
+                                           ServerHello
+                                          + key_share*
+                                     + pre_shared_key*  +----------+
+                                 {EncryptedExtensions}  | Flight 4 |
+                                 {CertificateRequest*}  +----------+
+                                        {Certificate*}
+                                  {CertificateVerify*}
+                      <--------             {Finished}
+                                   [Application Data*]
 
 
- {Certificate*}                                             +----------+
- {CertificateVerify*}                                       | Flight 5 |
- {Finished}             -------->                           +----------+
- [Application Data]
+{Certificate*}                                          +----------+
+{CertificateVerify*}                                    | Flight 5 |
+{Finished}            -------->                         +----------+
+[Application Data]
 
-                                                            +----------+
-                        <--------                    [ACK]  | Flight 6 |
-                                       [Application Data*]  +----------+
+                                                        +----------+
+                      <--------                  [ACK]  | Flight 6 |
+                                   [Application Data*]  +----------+
 
- [Application Data]     <------->      [Application Data]
+[Application Data]    <------->    [Application Data]
 ~~~~
 {: #dtls-full title="Message flights for a full DTLS Handshake (with cookie exchange)"}
 
 ~~~~
- ClientHello                                              +----------+
-  + pre_shared_key                                        | Flight 1 |
-  + key_share*         -------->                          +----------+
+Client                                          Server
+------                                          ------
+
+ClientHello                                             +----------+
+  + pre_shared_key                                      | Flight 1 |
+  + key_share*        -------->                         +----------+
 
 
-                                             ServerHello
-                                        + pre_shared_key  +----------+
-                                            + key_share*  | Flight 2 |
-                                   {EncryptedExtensions}  +----------+
-                       <--------              {Finished}
-                                     [Application Data*]
-                                                          +----------+
- {Finished}            -------->                          | Flight 3 |
- [Application Data*]                                      +----------+
+                                           ServerHello
+                                      + pre_shared_key  +----------+
+                                          + key_share*  | Flight 2 |
+                                 {EncryptedExtensions}  +----------+
+                      <--------             {Finished}
+                                   [Application Data*]
+                                                        +----------+
+{Finished}            -------->                         | Flight 3 |
+[Application Data*]                                     +----------+
 
-                                                          +----------+
-                       <--------                   [ACK]  | Flight 4 |
-                                     [Application Data*]  +----------+
+                                                        +----------+
+                      <--------                  [ACK]  | Flight 4 |
+                                   [Application Data*]  +----------+
 
- [Application Data]    <------->      [Application Data]
+[Application Data]    <------->     [Application Data]
 ~~~~
 {: #dtls-psk title="Message flights for resumption and PSK handshake (without cookie exchange)"}
 
 ~~~~
-Client                                            Server
+Client                                          Server
+------                                          ------
 
- ClientHello
+
+ClientHello
   + early_data
-  + psk_key_exchange_modes                                +----------+
-  + key_share*                                            | Flight 1 |
-  + pre_shared_key                                        +----------+
- (Application Data*)     -------->
+  + psk_key_exchange_modes                              +----------+
+  + key_share*                                          | Flight 1 |
+  + pre_shared_key                                      +----------+
+(Application Data*)   -------->
 
-                                             ServerHello
-                                        + pre_shared_key
-                                            + key_share*  +----------+
-                                   {EncryptedExtensions}  | Flight 2 |
-                                              {Finished}  +----------+
-                       <--------     [Application Data*]
+                                           ServerHello
+                                      + pre_shared_key
+                                          + key_share*  +----------+
+                                 {EncryptedExtensions}  | Flight 2 |
+                                            {Finished}  +----------+
+                      <--------    [Application Data*]
 
 
-                                                          +----------+
- {Finished}            -------->                          | Flight 3 |
- [Application Data*]                                      +----------+
+                                                        +----------+
+{Finished}            -------->                         | Flight 3 |
+[Application Data*]                                     +----------+
 
-                                                          +----------+
-                       <--------                   [ACK]  | Flight 4 |
-                                     [Application Data*]  +----------+
+                                                        +----------+
+                      <--------                  [ACK]  | Flight 4 |
+                                   [Application Data*]  +----------+
 
- [Application Data]    <------->      [Application Data]
+[Application Data]    <------->    [Application Data]
 ~~~~
 {: #dtls-zero-rtt title="Message flights for the Zero-RTT handshake"}
 
 ~~~~
 Client                                            Server
 
-                                                          +----------+
-                       <--------       [NewSessionTicket] | Flight 1 |
-                                                          +----------+
+                                                        +----------+
+                      <--------      [NewSessionTicket] | Flight 1 |
+                                                        +----------+
 
-                                                          +----------+
-[ACK]                  -------->                          | Flight 2 |
-                                                          +----------+
+                                                        +----------+
+[ACK]                 -------->                         | Flight 2 |
+                                                        +----------+
 ~~~~
 {: #dtls-post-handshake-ticket title="Message flights for the new session ticket message"}
 
@@ -1314,7 +1321,7 @@ Because DTLS clients send the first message (ClientHello), they start
 in the PREPARING state.  DTLS servers start in the WAITING state, but
 with empty buffers and no retransmit timer.
 
-In addition, for at least twice the default MSL defined for {{RFC0793}}, 
+In addition, for at least twice the default MSL defined for {{RFC0793}},
 when in the FINISHED state, the server MUST respond to retransmission 
 of the client's second flight with a retransmit of its ACK.
 
@@ -1457,51 +1464,50 @@ The following is an example of a handshake with lost packets and
 retransmissions.
 
 ~~~~
-Client                                                Server
-------                                                ------
+Client                                          Server
+------                                          ------
 
- Record 0                  -------->
- ClientHello
- (message_seq=0)
+Record 0
+ClientHello
+(message_seq=0)       -------->
 
-                             X<-----                 Record 0
-                             (lost)               ServerHello
-                                              (message_seq=1)
-                                          EncryptedExtensions
-                                              (message_seq=2)
-                                                  Certificate
-                                              (message_seq=3)
+                                              Record 0
+                                           ServerHello
+                                       (message_seq=1)
+                                   EncryptedExtensions
+                                       (message_seq=2)
+                                           Certificate
+                      X<-------        (message_seq=3)
+                      (lost)
+
+                                              Record 1
+                                     CertificateVerify
+                                       (message_seq=4)
+                                              Finished
+                      <--------        (message_seq=5)
+
+Record 1
+ACK []                -------->
 
 
-                           <--------                 Record 1
-                                            CertificateVerify
-                                              (message_seq=4)
-                                                     Finished
-                                              (message_seq=5)
+                                              Record 2
+                                           ServerHello
+                                       (message_seq=1)
+                                   EncryptedExtensions
+                                       (message_seq=2)
+                                           Certificate
+                      <--------        (message_seq=3)
 
- Record 1                  -------->
- ACK []
+Record 2
+Certificate
+(message_seq=1)
+CertificateVerify
+(message_seq=2)
+Finished
+(message_seq=3)       -------->
 
-
-                           <--------                 Record 2
-                                                  ServerHello
-                                              (message_seq=1)
-                                          EncryptedExtensions
-                                              (message_seq=2)
-                                                  Certificate
-                                              (message_seq=3)
-
- Record 2                  -------->
- Certificate
- (message_seq=1)
- CertificateVerify
- (message_seq=2)
- Finished
- (message_seq=3)
-
-                           <--------               Record 3
-                                                    ACK [2]
-
+                                              Record 3
+                      <--------                ACK [2]
 ~~~~
 {: #dtls-msg-loss title="Example DTLS exchange illustrating message loss"}
 
@@ -1512,7 +1518,7 @@ A recipient of a DTLS message needs to select the correct keying material
 in order to process an incoming message. With the possibility of message
  loss and re-ordering, an identifier is needed to determine which cipher state
 has been used to protect the record payload. The epoch value fulfills this
-role in DTLS. In addition to the TLS 1.3-defined key derivation steps, see 
+role in DTLS. In addition to the TLS 1.3-defined key derivation steps, see
 Section 7 of {{!TLS13}}, a sender may want to rekey at any time during
 the lifetime of the connection. It therefore needs to indicate that it is
 updating its sending cryptographic keys.
@@ -1556,63 +1562,62 @@ The traffic key calculation is described in Section 7.3 of {{!TLS13}}.
 {{dtls-msg-epoch}} illustrates the epoch values in an example DTLS handshake.
 
 ~~~~
-Client                                             Server
-------                                             ------
+Client                                          Server
+------                                          ------
 
- ClientHello
- (epoch=0)
-                            -------->
+ClientHello
+(epoch=0)             -------->
 
-                            <--------             ServerHello
-                                          [HelloRetryRequest]       
-                                                    (epoch=0)
+                      <--------            ServerHello
+                                   [HelloRetryRequest]
+                                             (epoch=0)
 
- ClientHello                -------->
- (epoch=0)
+ClientHello
+(epoch=0)             -------->
 
-                            <--------             ServerHello
-                                                    (epoch=0)
-                                        {EncryptedExtensions}
-                                                    (epoch=2)
-                                                {Certificate}
-                                                    (epoch=2)
-                                          {CertificateVerify}
-                                                    (epoch=2)
-                                                   {Finished}
-                                                    (epoch=2)
+                                           ServerHello
+                                             (epoch=0)
+                                 {EncryptedExtensions}
+                                             (epoch=2)
+                                         {Certificate}
+                                             (epoch=2)
+                                   {CertificateVerify}
+                                             (epoch=2)
+                                            {Finished}
+                      <--------              (epoch=2)
 
- {Certificate}              -------->
- (epoch=2)
- {CertificateVerify}
- (epoch=2)
- {Finished}
- (epoch=2)
+{Certificate}
+(epoch=2)
+{CertificateVerify}
+(epoch=2)
+{Finished}
+(epoch=2)             -------->
 
-                            <--------                   [ACK]
-                                                    (epoch=3)
+                                                 [ACK]
+                      <--------              (epoch=3)
 
- [Application Data]         -------->
- (epoch=3)
+[Application Data]
+(epoch=3)             -------->
 
-                            <--------      [Application Data]
-                                                    (epoch=3)
+                                    [Application Data]
+                      <--------              (epoch=3)
 
-                         Some time later ...
-                 (Post-Handshake Message Exchange)
+                   Some time later ...
+          (Post-Handshake Message Exchange)
 
-                            <--------      [NewSessionTicket]
-                                                    (epoch=3)
+                                    [NewSessionTicket]
+                      <--------              (epoch=3)
 
- [ACK]                      -------->
- (epoch=3)
+[ACK]
+(epoch=3)             -------->
 
-                         Some time later ...
-                           (Rekeying)
+                   Some time later ...
+                     (Rekeying)
 
-                            <--------      [Application Data]
-                                                    (epoch=4)
- [Application Data]         -------->
- (epoch=4)
+                                    [Application Data]
+                      <--------              (epoch=4)
+[Application Data]
+(epoch=4)             -------->
 ~~~~
 {: #dtls-msg-epoch title="Example DTLS exchange with epoch information"}
 
@@ -1659,7 +1664,7 @@ During the handshake, ACK records MUST be sent with an epoch that is
 equal to or higher than the record which is being acknowledged.
 Note that some care is required when processing flights spanning
 multiple epochs. For instance, if the client receives only the Server Hello
-and Certificate and wishes to ACK them in a single record, 
+and Certificate and wishes to ACK them in a single record,
 it must do so in epoch 2, as it is required to use an epoch
 greater than or equal to 2 and cannot yet send with any greater
 epoch. Implementations SHOULD simply use the highest 
@@ -1783,7 +1788,7 @@ on determining the correct epoch), but MAY opt to discard
 such out-of-epoch records.
 
 Due to the possibility of an ACK message for a KeyUpdate being lost and thereby
-preventing the sender of the KeyUpdate from updating its keying material, 
+preventing the sender of the KeyUpdate from updating its keying material,
 receivers MUST retain the pre-update keying material until receipt and successful 
 decryption of a message using the new keys. 
 
@@ -1854,45 +1859,44 @@ Note: The connection_id extension is defined in
 in ClientHello and ServerHello messages.
 
 ~~~~
-Client                                             Server
-------                                             ------
+Client                                          Server
+------                                          ------
+
+ClientHello
+(connection_id=5)     -------->
+
+
+                      <--------      HelloRetryRequest
+                                              (cookie)
 
 ClientHello
 (connection_id=5)
-                            -------->
+  +cookie             -------->
 
+                                           ServerHello
+                                   (connection_id=100)
+                                   EncryptedExtensions
+                                               (cid=5)
+                                           Certificate
+                                               (cid=5)
+                                     CertificateVerify
+                                               (cid=5)
+                                              Finished
+                      <--------                (cid=5)
 
-                            <--------       HelloRetryRequest
-                                                     (cookie)
-
-ClientHello                 -------->
-(connection_id=5)
-  +cookie
-
-                            <--------             ServerHello
-                                          (connection_id=100)
-                                          EncryptedExtensions
-                                                      (cid=5)
-                                                  Certificate
-                                                      (cid=5)
-                                            CertificateVerify
-                                                      (cid=5)
-                                                     Finished
-                                                      (cid=5)
-
-Certificate                -------->
+Certificate
 (cid=100)
 CertificateVerify
 (cid=100)
 Finished
-(cid=100)
-                           <--------                      Ack
-                                                      (cid=5)
+(cid=100)             -------->
+                                                   Ack
+                      <--------                (cid=5)
 
-Application Data           ========>
-(cid=100)
-                           <========         Application Data
-                                                      (cid=5)
+Application Data
+(cid=100)             ========>
+                                      Application Data
+                      <========                (cid=5)
 ~~~~
 {: #dtls-example title="Example DTLS 1.3 Exchange with CIDs"}
 
